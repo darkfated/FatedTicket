@@ -150,3 +150,19 @@ hook.Add('PlayerDisconnected', 'FatedTicket', function(pl)
 		pl:SetPData('fated_ticket_rating', pl:GetNWInt('fated_ticket_rating'))
 	end
 end)
+
+hook.Add('PlayerSay', 'FatedTicket', function(pl, text)
+	if text == '/report' then
+		pl:ConCommand('fated_ticket_create')
+		
+		return ''
+	elseif text[1] == '@' then
+		local text_len = string.len(text)
+
+		if text_len > 1 then
+			pl:ConCommand('fated_ticket_create ' .. string.sub(text, 2, text_len))
+			
+			return ''
+		end
+	end
+end)

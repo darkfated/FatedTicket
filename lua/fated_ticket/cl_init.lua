@@ -150,7 +150,8 @@ net.Receive('FatedTicket-UpdateClientData', function()
 
 				local HalfWide = FatedTicket.admin_menu:GetWide() * 0.5 - 4
 
-				local target_text = 'Ник: ' .. ticket_data.target:Name() .. '\nПривилегия: ' .. ticket_data.target:GetUserGroup() .. '\nРабота: ' .. ticket_data.target:getDarkRPVar('job', 'Неизвестно')
+				local target_job = ticket_data.target:getDarkRPVar('job') or 'Неизвестно'
+				local target_text = 'Ник: ' .. ticket_data.target:Name() .. '\nПривилегия: ' .. ticket_data.target:GetUserGroup() .. '\nРабота: ' .. target_job
 				target_text = DarkRP.textWrap(target_text, 'Fated.18', HalfWide - 8)
 
 				MainPanel.left = vgui.Create('DPanel', MainPanel)
@@ -271,7 +272,7 @@ net.Receive('FatedTicket-Rating', function()
 	end
 end)
 
-concommand.Add('fated_ticket_create', function()
+concommand.Add('fated_ticket_create', function(_, _, _, reason_text)
 	if IsValid(FatedTicket.create_menu) then
 		FatedTicket.create_menu:Remove()
 	end
@@ -293,6 +294,10 @@ concommand.Add('fated_ticket_create', function()
 	ReasonEntry:DockMargin(0, 4, 0, 0)
 	ReasonEntry:SetPlaceholderText('Напишите обстоятельства')
 	ReasonEntry:SetFont('Fated.16')
+
+	if reason_text != '' then
+		ReasonEntry:SetValue(reason_text)
+	end
 
 	local TargetLabel = vgui.Create('DLabel', FatedTicket.create_menu)
 	TargetLabel:Dock(TOP)
