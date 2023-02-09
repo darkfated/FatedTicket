@@ -40,6 +40,75 @@ local color_panel_target = Color(204,64,64)
 local color_vbar = Color(63,66,102)
 local color_gray = Color(80,80,80)
 
+local function safeText(text)
+    return string.match(text, '^#([a-zA-Z_]+)$') and text .. ' ' or text
+end
+
+local function DrawNonParsedText(text, font, x, y, color, xAlign)
+    return draw.DrawText(safeText(text), font, x, y, color, xAlign)
+end
+
+local function charWrap(text, remainingWidth, maxWidth)
+    local totalWidth = 0
+
+    text = text:gsub('.', function(char)
+        totalWidth = totalWidth + surface.GetTextSize(char)
+
+        if totalWidth >= remainingWidth then
+            totalWidth = surface.GetTextSize(char)
+            remainingWidth = maxWidth
+
+            return '\n' .. char
+        end
+
+        return char
+    end)
+
+    return text, totalWidth
+end
+
+local function textWrap(text, font, maxWidth)
+    local totalWidth = 0
+
+    surface.SetFont(font)
+
+    local spaceWidth = surface.GetTextSize(' ')
+
+    text = text:gsub('(%s?[%S]+)', function(word)
+            local char = string.sub(word, 1, 1)
+
+            if char == '\n' or char == '\t' then
+                totalWidth = 0
+            end
+
+            local wordlen = surface.GetTextSize(word)
+
+            totalWidth = totalWidth + wordlen
+
+            if wordlen >= maxWidth then
+                local splitWord, splitPoint = charWrap(word, maxWidth - totalWidth + wordlen, maxWidth)
+
+                totalWidth = splitPoint
+
+                return splitWord
+            elseif totalWidth < maxWidth then
+                return word
+            end
+
+            if char == ' ' then
+                totalWidth = wordlen - spaceWidth
+
+                return '\n' .. string.sub(word, 2)
+            end
+
+            totalWidth = wordlen
+
+            return '\n' .. word
+        end)
+
+    return text
+end
+
 local function CreateFatedTicketMenu(pan, title, width, height, close_bool)
 	pan:SetSize(width, height)
 	pan:SetTitle('')
@@ -152,9 +221,9 @@ net.Receive('FatedTicket-UpdateClientData', function()
 
 				local HalfWide = FatedTicket.admin_menu:GetWide() * 0.5 - 4
 
-				local target_job = ticket_data.target:getDarkRPVar('job') or 'Неизвестно'
+				local target_job = team.GetName(ticket_data.target:Team())
 				local target_text = 'Ник: ' .. ticket_data.target:Name() .. '\nПривилегия: ' .. ticket_data.target:GetUserGroup() .. '\nРабота: ' .. target_job
-				target_text = DarkRP.textWrap(target_text, 'Fated.18', HalfWide - 8)
+				target_text = textWrap(target_text, 'Fated.18', HalfWide - 8)
 
 				MainPanel.left = vgui.Create('DPanel', MainPanel)
 				MainPanel.left:Dock(LEFT)
@@ -162,11 +231,11 @@ net.Receive('FatedTicket-UpdateClientData', function()
 				MainPanel.left.Paint = function(_, w, h)
 					draw.RoundedBoxEx(6, 0, 0, w, 24, color_panel_target, true, false, true, false)
 					draw.SimpleText('Нарушитель', 'Fated.18', w * 0.5, 3, color_white, TEXT_ALIGN_CENTER)
-					draw.DrawNonParsedText(target_text, 'Fated.18', 4, 26, color_white)
+					DrawNonParsedText(target_text, 'Fated.18', 4, 26, color_white)
 				end
 
 				local reason_txt = ticket_data.reason:gsub('//', '\n'):gsub('\\n', '\n')
-				reason_txt = DarkRP.textWrap(reason_txt, 'Fated.18', HalfWide - 8)
+				reason_txt = textWrap(reason_txt, 'Fated.18', HalfWide - 8)
 
 				MainPanel.right = vgui.Create('DPanel', MainPanel)
 				MainPanel.right:Dock(RIGHT)
@@ -174,7 +243,7 @@ net.Receive('FatedTicket-UpdateClientData', function()
 				MainPanel.right.Paint = function(_, w, h)
 					draw.RoundedBoxEx(6, 0, 0, w, 24, color_player_btn, false, true, false, true)
 					draw.SimpleText('Причина', 'Fated.18', w * 0.5, 3, color_white, TEXT_ALIGN_CENTER)
-					draw.DrawNonParsedText(reason_txt, 'Fated.18', 4, 26, color_white)
+					DrawNonParsedText(reason_txt, 'Fated.18', 4, 26, color_white)
 				end
 
 				local BottomPanel = vgui.Create('DPanel', FatedTicket.admin_menu.player_profile)
