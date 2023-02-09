@@ -1,7 +1,9 @@
+local color_green = Color(96,221,92)
+
 net.Receive('FatedTicket-Msg', function()
 	local txt = net.ReadString()
 
-	chat.AddText(Color(96,221,92), '[FatedTicket] ', color_white, txt)
+	chat.AddText(color_green, '[FatedTicket] ', color_white, txt)
 	chat.PlaySound()
 end)
 
@@ -53,7 +55,7 @@ local function CreateFatedTicketMenu(pan, title, width, height, close_bool)
 	if close_bool then
 		pan.cls = vgui.Create('DButton', pan)
 		pan.cls:SetSize(20, 20)
-		pan.cls:SetPos(pan:GetWide() - pan.cls:GetWide() - 2, 2)
+		pan.cls:SetPos(pan:GetWide() - 22, 2)
 		pan.cls:SetText('')
 		pan.cls.Paint = function(_, w, h)
 			surface.SetDrawColor(color_white)
@@ -197,12 +199,14 @@ net.Receive('FatedTicket-UpdateClientData', function()
 					net.SendToServer()
 				end
 
+				local right_btn_text = ticket_data.admin and 'Действия' or 'Взять'
+
 				BottomPanel.right = vgui.Create('DButton', BottomPanel)
 				BottomPanel.right:Dock(RIGHT)
 				BottomPanel.right:SetWide(HalfWide)
 				BottomPanel.right:SetText('')
 				BottomPanel.right.Paint = function(self, w, h)
-					draw.SimpleText(ticket_data.admin and 'Действия' or 'Взять', 'Fated.22', w * 0.5, h * 0.5 - 1, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+					draw.SimpleText(right_btn_text, 'Fated.22', w * 0.5, h * 0.5 - 1, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 				end
 				BottomPanel.right.DoClick = function()
 					if !ticket_data.admin then
@@ -241,7 +245,7 @@ net.Receive('FatedTicket-Rating', function()
 
 	CreateFatedTicketMenu(FatedTicket.rating_menu, 'Оцените ' .. admin:Name(), 250, 62, true)
 
-	FatedTicket.rating_menu:SetPos(ScrW() * 0.5 - FatedTicket.rating_menu:GetWide() * 0.5, ScrH() - FatedTicket.rating_menu:GetTall() - 15)
+	FatedTicket.rating_menu:SetPos(ScrW() * 0.5 - 125, ScrH() - 77)
 	FatedTicket.rating_menu.star = 0
 
 	for rating = 1, 10 do
@@ -388,12 +392,17 @@ concommand.Add('fated_ticket_statistic', function()
 		local ply_pan = vgui.Create('DPanel', FatedTicket.statistic_menu.sp)
 		ply_pan:Dock(TOP)
 		ply_pan:SetTall(30)
+
+		local ply_name = ply:Name()
+		local ply_tickets = ply:GetNWInt('fated_ticket', 0)
+		local ply_rating = string.sub(ply:GetNWInt('fated_ticket_rating', 0) / ply_tickets == 0 and 1 or ply_tickets, 0, 3)
+
 		ply_pan.Paint = function(_, w, h)
 			draw.RoundedBox(6, 0, 0, w, h, color_player_panel)
 
-			draw.SimpleText(ply:Name(), 'Fated.18', 8, h * 0.5 - 1, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-			draw.SimpleText(string.sub(ply:GetNWInt('fated_ticket_rating', 0) / ply:GetNWInt('fated_ticket', 0), 0, 3), 'Fated.18', w * 0.5, h * 0.5 - 1, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-			draw.SimpleText(ply:GetNWInt('fated_ticket', 0), 'Fated.18', w - 8, h * 0.5 - 1, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+			draw.SimpleText(ply_name, 'Fated.18', 8, h * 0.5 - 1, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			draw.SimpleText(ply_rating, 'Fated.18', w * 0.5, h * 0.5 - 1, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			draw.SimpleText(ply_tickets, 'Fated.18', w - 8, h * 0.5 - 1, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		end
 	end
 end)
