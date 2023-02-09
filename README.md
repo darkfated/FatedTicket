@@ -1,2 +1,2 @@
 # FatedTicket
- Administration system for handling complaints
+Administration system for handling complaints
