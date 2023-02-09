@@ -121,7 +121,7 @@ net.Receive('FatedTicket-RatingResult', function(_, pl)
 
 	admin:SetNWInt('fated_ticket_rating', pl:GetNWInt('fated_ticket_rating', 0) + rating)
 
-	DarkRP.notify(admin, NOTIFY_GENERIC, 2.5, 'Вас оценили на ' .. rating .. '.')
+	FatedNotify(admin, 'Вас оценили на ' .. rating .. '.')
 end)
 
 hook.Add('PlayerInitialSpawn', 'FatedTicket', function(pl)
