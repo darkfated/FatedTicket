@@ -464,13 +464,14 @@ concommand.Add('fated_ticket_statistic', function()
 
 		local ply_name = ply:Name()
 		local ply_tickets = ply:GetNWInt('fated_ticket', 0)
-		local ply_rating = string.sub(ply:GetNWInt('fated_ticket_rating', 0) / ply_tickets == 0 and 1 or ply_tickets, 0, 3)
+		local ply_tickets_rating = ply:GetNWInt('fated_ticket_rating', 0)
+		local ply_rating_text = string.sub(ply_tickets_rating / ply_tickets == 0 and 1 or (ply_tickets_rating / ply_tickets), 0, 3)
 
 		ply_pan.Paint = function(_, w, h)
 			draw.RoundedBox(6, 0, 0, w, h, color_player_panel)
 
 			draw.SimpleText(ply_name, 'Fated.18', 8, h * 0.5 - 1, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-			draw.SimpleText(ply_rating, 'Fated.18', w * 0.5, h * 0.5 - 1, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			draw.SimpleText(ply_rating_text, 'Fated.18', w * 0.5, h * 0.5 - 1, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			draw.SimpleText(ply_tickets, 'Fated.18', w - 8, h * 0.5 - 1, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		end
 	end
