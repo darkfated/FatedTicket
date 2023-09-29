@@ -299,9 +299,12 @@ local function CreateAdminTicketMenu(tickets_count)
 							net.WriteBool(false)
 							net.WriteEntity(ply)
 						net.SendToServer()
+
+						FatedTicket.admin_menu.player_profile:Remove()
+
 					else
 						local DM = DermaMenu()
-						
+
 						if has_target then
 							DM:AddOption('SteamID Нарушителя', function()
 								SetClipboardText(ticket_data.target:SteamID())
