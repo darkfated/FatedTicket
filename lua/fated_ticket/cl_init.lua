@@ -28,7 +28,8 @@ surface.CreateFont('Fated.16', {
 	extended = true,
 })
 
-local mat_close = Material('fated_ticket/close_btn.png')
+local mat_btn_close = Material('fated_ticket/close_btn.png')
+local mat_btn_roll = Material('fated_ticket/roll_btn.png')
 local mat_star = Material('fated_ticket/star.png')
 local color_header = Color(51,51,51)
 local color_background = Color(34,34,34)
@@ -109,30 +110,59 @@ local function textWrap(text, font, maxWidth)
     return text
 end
 
-local function CreateFatedTicketMenu(pan, title, width, height, close_bool)
+local function CreateFatedTicketMenu(pan, title, width, height, bool_btn_close, bool_btn_roll)
 	pan:SetSize(width, height)
 	pan:SetTitle('')
 	pan:ShowCloseButton(false)
 	pan:DockPadding(6, 30, 6, 6)
-	pan.Paint = function(_, w, h)
-		draw.RoundedBoxEx(6, 0, 0, w, 24, color_header, true, true, false, false)
+	pan.Paint = function(self, w, h)
+		draw.RoundedBoxEx(6, 0, 0, w, 24, color_header, true, true, (h == 24 and true) or false, (h == 24 and true) or false)
 		draw.RoundedBoxEx(6, 0, 24, w, h - 24, color_background, false, false, true, true)
 
-		draw.SimpleText(title, 'Fated.16', 6, 4, color_white)
+		draw.SimpleText(self.title_text, 'Fated.16', 6, 4, color_white)
+	end
+	pan.default_size = {width, height}
+	pan.title_text = title
+
+	function pan:PerformLayout(w, h)
+		if bool_btn_close then
+			pan.btn_close:SetSize(20, 20)
+			pan.btn_close:SetPos(w - 22, 2)
+		end
+
+		if bool_btn_roll then
+			pan.btn_roll:SetSize(20, 20)
+			pan.btn_roll:SetPos(w - 22 - (bool_btn_close and 22 or 0), 2)
+		end
 	end
 
-	if close_bool then
-		pan.cls = vgui.Create('DButton', pan)
-		pan.cls:SetSize(20, 20)
-		pan.cls:SetPos(pan:GetWide() - 22, 2)
-		pan.cls:SetText('')
-		pan.cls.Paint = function(_, w, h)
+	if bool_btn_close then
+		pan.btn_close = vgui.Create('DButton', pan)
+		pan.btn_close:SetText('')
+		pan.btn_close.Paint = function(_, w, h)
 			surface.SetDrawColor(color_white)
-			surface.SetMaterial(mat_close)
+			surface.SetMaterial(mat_btn_close)
 			surface.DrawTexturedRect(0, 0, w, h)
 		end
-		pan.cls.DoClick = function()
+		pan.btn_close.DoClick = function()
 			pan:Remove()
+		end
+	end
+
+	if bool_btn_roll then
+		pan.btn_roll = vgui.Create('DButton', pan)
+		pan.btn_roll:SetText('')
+		pan.btn_roll.Paint = function(_, w, h)
+			surface.SetDrawColor(color_white)
+			surface.SetMaterial(mat_btn_roll)
+			surface.DrawTexturedRect(0, 0, w, h)
+		end
+		pan.btn_roll.DoClick = function()
+			if pan:GetTall() == 24 then
+				pan:SetSize(pan.default_size[1], pan.default_size[2])
+			else
+				pan:SetSize(pan.default_size[1] * 0.7, 24)
+			end
 		end
 	end
 end
@@ -148,34 +178,18 @@ local function PaintFatedTicketScrollPanel(pan)
 	end
 end
 
-net.Receive('FatedTicket-UpdateClientData', function()
-	FatedTicket.reports_cl = net.ReadTable()
+local function CreateAdminTicketMenu(tickets_count)
+	FatedTicket.admin_menu = vgui.Create('DFrame')
+	CreateFatedTicketMenu(FatedTicket.admin_menu, 'Количество жалоб: ' .. tickets_count, 300, 200, nil, true)
+	FatedTicket.admin_menu:SetPos(15, 52)
 
-	if LocalPlayer():IsAdmin() then
-		if IsValid(FatedTicket.admin_menu) then
-			FatedTicket.admin_menu:Remove()
-			
-			if IsValid(FatedTicket.admin_menu.player_profile) then
-				FatedTicket.admin_menu.player_profile:Remove()
-			end
-		end
+	FatedTicket.admin_menu.sp = vgui.Create('DScrollPanel', FatedTicket.admin_menu)
+	FatedTicket.admin_menu.sp:Dock(FILL)
+	PaintFatedTicketScrollPanel(FatedTicket.admin_menu.sp)
 
-		local tickets = table.Count(FatedTicket.reports_cl)
-
-		if tickets == 0 then
-			return
-		end
-
-		FatedTicket.admin_menu = vgui.Create('DFrame')
-
-		CreateFatedTicketMenu(FatedTicket.admin_menu, 'Количество жалоб: ' .. tickets, 300, 200)
-
-		FatedTicket.admin_menu:SetPos(15, 52)
-
-		FatedTicket.admin_menu.sp = vgui.Create('DScrollPanel', FatedTicket.admin_menu)
-		FatedTicket.admin_menu.sp:Dock(FILL)
-
-		PaintFatedTicketScrollPanel(FatedTicket.admin_menu.sp)
+	function FatedTicket.admin_menu.sp:CreateItems(tickets_count)
+		FatedTicket.admin_menu.sp:Clear()
+		FatedTicket.admin_menu.title_text = 'Количество жалоб: ' .. tickets_count
 
 		for ply, ticket_data in pairs(FatedTicket.reports_cl) do
 			local ticket_pan = vgui.Create('DPanel', FatedTicket.admin_menu.sp)
@@ -208,11 +222,8 @@ net.Receive('FatedTicket-UpdateClientData', function()
 				end
 
 				FatedTicket.admin_menu.player_profile = vgui.Create('DFrame')
-
 				CreateFatedTicketMenu(FatedTicket.admin_menu.player_profile, 'Жалоба ' .. ply:Name(), 300, 200, true)
-
 				local menu_x, menu_y = FatedTicket.admin_menu:GetPos()
-
 				FatedTicket.admin_menu.player_profile:SetPos(menu_x + FatedTicket.admin_menu:GetWide() + 6, menu_y)
 
 				local MainPanel = vgui.Create('DPanel', FatedTicket.admin_menu.player_profile)
@@ -301,6 +312,22 @@ net.Receive('FatedTicket-UpdateClientData', function()
 			end
 		end
 	end
+
+	FatedTicket.admin_menu.sp:CreateItems(tickets_count)
+end
+
+net.Receive('FatedTicket-UpdateClientData', function()
+	if LocalPlayer():IsAdmin() then
+		FatedTicket.reports_cl = net.ReadTable()
+
+		local count = table.Count(FatedTicket.reports_cl)
+
+		if IsValid(FatedTicket.admin_menu) then
+			FatedTicket.admin_menu.sp:CreateItems(count)
+		else
+			CreateAdminTicketMenu(count)
+		end
+	end
 end)
 
 net.Receive('FatedTicket-Rating', function()
@@ -311,9 +338,7 @@ net.Receive('FatedTicket-Rating', function()
 	local admin = net.ReadEntity()
 
 	FatedTicket.rating_menu = vgui.Create('DFrame')
-
 	CreateFatedTicketMenu(FatedTicket.rating_menu, 'Оцените ' .. admin:Name(), 250, 62, true)
-
 	FatedTicket.rating_menu:SetPos(ScrW() * 0.5 - 125, ScrH() - 77)
 	FatedTicket.rating_menu.star = 0
 
@@ -352,9 +377,7 @@ concommand.Add('fated_ticket_create', function(_, _, _, reason_text)
 
 	FatedTicket.create_menu = vgui.Create('DFrame')
 	FatedTicket.create_menu:MakePopup()
-	
 	CreateFatedTicketMenu(FatedTicket.create_menu, 'Создание жалобы', 300, 170, true)
-
 	FatedTicket.create_menu:Center()
 
 	local ReasonLabel = vgui.Create('DLabel', FatedTicket.create_menu)
@@ -430,14 +453,11 @@ concommand.Add('fated_ticket_statistic', function()
 
 	FatedTicket.statistic_menu = vgui.Create('DFrame')
 	FatedTicket.statistic_menu:MakePopup()
-	
 	CreateFatedTicketMenu(FatedTicket.statistic_menu, 'Статистика администрации', 500, 300, true)
-
 	FatedTicket.statistic_menu:Center()
 
 	FatedTicket.statistic_menu.sp = vgui.Create('DScrollPanel', FatedTicket.statistic_menu)
 	FatedTicket.statistic_menu.sp:Dock(FILL)
-
 	PaintFatedTicketScrollPanel(FatedTicket.statistic_menu.sp)
 
 	local players = player.GetAll()

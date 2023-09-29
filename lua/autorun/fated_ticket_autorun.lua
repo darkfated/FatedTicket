@@ -9,5 +9,6 @@ FileCl('fated_ticket/cl_init.lua')
 if SERVER then
 	resource.AddWorkshop('2924839375')
 	resource.AddFile('materials/fated_ticket/close_btn.png')
+	resource.AddFile('materials/fated_ticket/roll_btn.png')
 	resource.AddFile('materials/fated_ticket/star.png')
 end

@@ -136,10 +136,13 @@ end)
 
 hook.Add('PlayerDisconnected', 'FatedTicket', function(pl)
 	if FatedTicket.reports[pl] then
+		if IsValid(FatedTicket.reports[pl].admin) then
+			FatedNotify(FatedTicket.reports[pl].admin, 'Жалоба ' .. pl:Name() .. ' отменена - игрок вышел.')
+		end
+
 		FatedTicket.reports[pl] = nil
 
 		FatedUpdateClient()
-		FatedNotify(notify_ply, 'Жалоба ' .. pl:Name() .. ' отменена - игрок вышел.')
 	end
 
 	if pl:GetNWInt('fated_ticket') != nil then
