@@ -277,6 +277,8 @@ local function CreateAdminTicketMenu(tickets_count)
 						net.WriteBool(true)
 						net.WriteEntity(ply)
 					net.SendToServer()
+
+					FatedTicket.admin_menu.player_profile:Remove()
 				end
 
 				local right_btn_text = ticket_data.admin and 'Действия' or 'Взять'
