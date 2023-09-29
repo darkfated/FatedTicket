@@ -230,29 +230,32 @@ local function CreateAdminTicketMenu(tickets_count)
 				MainPanel:Dock(FILL)
 				MainPanel.Paint = nil
 
-				local HalfWide = FatedTicket.admin_menu:GetWide() * 0.5 - 4
+				local has_target = (ticket_data.target != ply)
+				local HalfWide = FatedTicket.admin_menu.player_profile:GetWide() * 0.5
 
-				local target_job = team.GetName(ticket_data.target:Team())
-				local target_text = 'Ник: ' .. ticket_data.target:Name() .. '\nПривилегия: ' .. ticket_data.target:GetUserGroup() .. '\nРабота: ' .. target_job
-				target_text = textWrap(target_text, 'Fated.18', HalfWide - 8)
+				if has_target then
+					local target_job = team.GetName(ticket_data.target:Team())
+					local target_text = 'Ник: ' .. ticket_data.target:Name() .. '\nПривилегия: ' .. ticket_data.target:GetUserGroup() .. '\nРабота: ' .. target_job
+					target_text = textWrap(target_text, 'Fated.18', HalfWide - 12)
 
-				MainPanel.left = vgui.Create('DPanel', MainPanel)
-				MainPanel.left:Dock(LEFT)
-				MainPanel.left:SetWide(HalfWide)
-				MainPanel.left.Paint = function(_, w, h)
-					draw.RoundedBoxEx(6, 0, 0, w, 24, color_panel_target, true, false, true, false)
-					draw.SimpleText('Нарушитель', 'Fated.18', w * 0.5, 3, color_white, TEXT_ALIGN_CENTER)
-					DrawNonParsedText(target_text, 'Fated.18', 4, 26, color_white)
+					MainPanel.left = vgui.Create('DPanel', MainPanel)
+					MainPanel.left:Dock(LEFT)
+					MainPanel.left:SetWide(HalfWide - 8)
+					MainPanel.left.Paint = function(_, w, h)
+						draw.RoundedBox(6, 0, 0, w, 24, color_panel_target)
+						draw.SimpleText('Нарушитель', 'Fated.18', w * 0.5, 3, color_white, TEXT_ALIGN_CENTER)
+						DrawNonParsedText(target_text, 'Fated.18', 4, 26, color_white)
+					end
 				end
 
 				local reason_txt = ticket_data.reason:gsub('//', '\n'):gsub('\\n', '\n')
-				reason_txt = textWrap(reason_txt, 'Fated.18', HalfWide - 8)
+				reason_txt = textWrap(reason_txt, 'Fated.18', (has_target and HalfWide - 12) or FatedTicket.admin_menu.player_profile:GetWide() - 16)
 
 				MainPanel.right = vgui.Create('DPanel', MainPanel)
 				MainPanel.right:Dock(RIGHT)
-				MainPanel.right:SetWide(HalfWide)
-				MainPanel.right.Paint = function(_, w, h)
-					draw.RoundedBoxEx(6, 0, 0, w, 24, color_player_btn, false, true, false, true)
+				MainPanel.right:SetWide((has_target and HalfWide - 8) or FatedTicket.admin_menu.player_profile:GetWide() - 12)
+				MainPanel.right.Paint = function(self, w, h)
+					draw.RoundedBox(6, 0, 0, w, 24, color_player_btn)
 					draw.SimpleText('Причина', 'Fated.18', w * 0.5, 3, color_white, TEXT_ALIGN_CENTER)
 					DrawNonParsedText(reason_txt, 'Fated.18', 4, 26, color_white)
 				end
@@ -267,7 +270,7 @@ local function CreateAdminTicketMenu(tickets_count)
 
 				BottomPanel.left = vgui.Create('DButton', BottomPanel)
 				BottomPanel.left:Dock(LEFT)
-				BottomPanel.left:SetWide(HalfWide)
+				BottomPanel.left:SetWide(FatedTicket.admin_menu.player_profile:GetWide() * 0.5 - 6)
 				BottomPanel.left:SetText('')
 				BottomPanel.left.Paint = function(self, w, h)
 					draw.SimpleText('Закрыть', 'Fated.22', w * 0.5, h * 0.5 - 1, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
@@ -285,7 +288,7 @@ local function CreateAdminTicketMenu(tickets_count)
 
 				BottomPanel.right = vgui.Create('DButton', BottomPanel)
 				BottomPanel.right:Dock(RIGHT)
-				BottomPanel.right:SetWide(HalfWide)
+				BottomPanel.right:SetWide(BottomPanel.left:GetWide())
 				BottomPanel.right:SetText('')
 				BottomPanel.right.Paint = function(self, w, h)
 					draw.SimpleText(right_btn_text, 'Fated.22', w * 0.5, h * 0.5 - 1, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
@@ -298,11 +301,15 @@ local function CreateAdminTicketMenu(tickets_count)
 						net.SendToServer()
 					else
 						local DM = DermaMenu()
-						DM:AddOption('SteamID Нарушителя', function()
-							SetClipboardText(ticket_data.target:SteamID())
+						
+						if has_target then
+							DM:AddOption('SteamID Нарушителя', function()
+								SetClipboardText(ticket_data.target:SteamID())
 
-							surface.PlaySound('UI/buttonclickrelease.wav')
-						end):SetIcon('icon16/bullet_red.png')
+								surface.PlaySound('UI/buttonclickrelease.wav')
+							end):SetIcon('icon16/bullet_red.png')
+						end
+						
 						DM:AddOption('SteamID Игрока', function()
 							SetClipboardText(ply:SteamID())
 
@@ -421,7 +428,6 @@ concommand.Add('fated_ticket_create', function(_, _, _, reason_text)
 
 	if reason_text != '' then
 		ReasonEntry:SetValue(reason_text)
-		TargetComboBox:SetValue('Без нарушителя')
 	end
 
 	local SendButton = vgui.Create('DButton', FatedTicket.create_menu)
