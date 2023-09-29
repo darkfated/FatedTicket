@@ -393,10 +393,6 @@ concommand.Add('fated_ticket_create', function(_, _, _, reason_text)
 	ReasonEntry:SetPlaceholderText('Напишите обстоятельства')
 	ReasonEntry:SetFont('Fated.16')
 
-	if reason_text != '' then
-		ReasonEntry:SetValue(reason_text)
-	end
-
 	local TargetLabel = vgui.Create('DLabel', FatedTicket.create_menu)
 	TargetLabel:Dock(TOP)
 	TargetLabel:DockMargin(0, 4, 0, 0)
@@ -421,7 +417,12 @@ concommand.Add('fated_ticket_create', function(_, _, _, reason_text)
 		TargetComboBox:AddChoice(ply:Name(), ply, nil, 'icon16/user.png')
 	end
 
-	TargetComboBox:AddChoice('Пусто', LocalPlayer(), nil, 'icon16/page_white.png')
+	TargetComboBox:AddChoice('Без нарушителя', LocalPlayer(), nil, 'icon16/page_white.png')
+
+	if reason_text != '' then
+		ReasonEntry:SetValue(reason_text)
+		TargetComboBox:SetValue('Без нарушителя')
+	end
 
 	local SendButton = vgui.Create('DButton', FatedTicket.create_menu)
 	SendButton:Dock(FILL)
