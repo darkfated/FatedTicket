@@ -6,166 +6,166 @@ util.AddNetworkString('FatedTicket-Rating')
 util.AddNetworkString('FatedTicket-RatingResult')
 
 local function FatedNotify(pl, txt)
-	net.Start('FatedTicket-Msg')
-		net.WriteString(txt)
+    net.Start('FatedTicket-Msg')
+        net.WriteString(txt)
 
-	if pl == true then
-		net.Broadcast()
-	else
-		net.Send(pl)
-	end
+    if pl == true then
+        net.Broadcast()
+    else
+        net.Send(pl)
+    end
 end
 
 FatedTicket.reports = FatedTicket.reports or {}
 
 local function FatedUpdateClient()
-	net.Start('FatedTicket-UpdateClientData')
-		net.WriteTable(FatedTicket.reports)
-	net.Broadcast()
+    net.Start('FatedTicket-UpdateClientData')
+        net.WriteTable(FatedTicket.reports)
+    net.Broadcast()
 end
 
 net.Receive('FatedTicket-Send', function(_, pl)
-	local reason = net.ReadString()
-	local target = net.ReadEntity()
+    local reason = net.ReadString()
+    local target = net.ReadEntity()
 
-	if reason == '' then
-		FatedNotify(pl, 'Укажите причину.')
+    if reason == '' then
+        FatedNotify(pl, 'Укажите причину.')
 
-		return
-	end
+        return
+    end
 
-	if string.len(reason) > 120 then
-		FatedNotify(pl, 'Причина слишком длинная.')
+    if string.len(reason) > 120 then
+        FatedNotify(pl, 'Причина слишком длинная.')
 
-		return
-	end
+        return
+    end
 
-	if !IsValid(target) then
-		FatedNotify(pl, 'Выберите игрока.')
-		
-		return
-	end
+    if !IsValid(target) then
+        FatedNotify(pl, 'Выберите игрока.')
+        
+        return
+    end
 
-	FatedNotify(pl, 'Жалоба отправлена!')
+    FatedNotify(pl, 'Жалоба отправлена!')
 
-	FatedTicket.reports[pl] = {
-		reason = reason,
-		target = target,
-	}
+    FatedTicket.reports[pl] = {
+        reason = reason,
+        target = target,
+    }
 
-	FatedUpdateClient()
+    FatedUpdateClient()
 end)
 
 net.Receive('FatedTicket-AdminAction', function(_, pl)
-	local mode_close = net.ReadBool()
-	local ticket_ply = net.ReadEntity()
+    local mode_close = net.ReadBool()
+    local ticket_ply = net.ReadEntity()
 
-	if !IsValid(ticket_ply) then
-		FatedNotify(pl, 'Этот игрок больше не существует.')
+    if !IsValid(ticket_ply) then
+        FatedNotify(pl, 'Этот игрок больше не существует.')
 
-		return
-	end
+        return
+    end
 
-	if !pl:IsAdmin() then
-		FatedNotify(pl, 'У вас нет прав на выполнение этого действия.')
-		
-		return
-	end
+    if !pl:IsAdmin() then
+        FatedNotify(pl, 'У вас нет прав на выполнение этого действия.')
+        
+        return
+    end
 
-	if ticket_ply == pl then
-		FatedNotify(pl, 'Нельзя разбирать свою жалобу!')
+    if ticket_ply == pl then
+        FatedNotify(pl, 'Нельзя разбирать свою жалобу!')
 
-		return
-	end
+        return
+    end
 
-	local players = player.GetAll()
-	local current_ticket = FatedTicket.reports[ticket_ply]
+    local players = player.GetAll()
+    local current_ticket = FatedTicket.reports[ticket_ply]
 
-	if mode_close then
-		if current_ticket.admin then
-			if current_ticket.admin != pl then
-				FatedNotify(pl, 'Это не ваша жалоба.')
+    if mode_close then
+        if current_ticket.admin then
+            if current_ticket.admin != pl then
+                FatedNotify(pl, 'Это не ваша жалоба.')
 
-				return
-			else
-				pl:SetNWInt('fated_ticket', pl:GetNWInt('fated_ticket', 0) + 1)
+                return
+            else
+                pl:SetNWInt('fated_ticket', pl:GetNWInt('fated_ticket', 0) + 1)
 
-				net.Start('FatedTicket-Rating')
-					net.WriteEntity(pl)
-				net.Send(ticket_ply)
-			end
-		end
+                net.Start('FatedTicket-Rating')
+                    net.WriteEntity(pl)
+                net.Send(ticket_ply)
+            end
+        end
 
-		FatedTicket.reports[ticket_ply] = nil
+        FatedTicket.reports[ticket_ply] = nil
 
-		FatedUpdateClient()
-		FatedNotify(true, pl:Name() .. ' (' .. pl:SteamID() .. ') закрыл жалобу ' .. ticket_ply:Name())
-	else
-		current_ticket.admin = pl
+        FatedUpdateClient()
+        FatedNotify(true, pl:Name() .. ' (' .. pl:SteamID() .. ') закрыл жалобу ' .. ticket_ply:Name())
+    else
+        current_ticket.admin = pl
 
-		FatedUpdateClient()
-		FatedNotify(true, pl:Name() .. ' (' .. pl:SteamID() .. ') взял жалобу ' .. ticket_ply:Name())
+        FatedUpdateClient()
+        FatedNotify(true, pl:Name() .. ' (' .. pl:SteamID() .. ') взял жалобу ' .. ticket_ply:Name())
 
-		pl:SetPos(ticket_ply:GetPos())
-	end
+        pl:SetPos(ticket_ply:GetPos())
+    end
 end)
 
 net.Receive('FatedTicket-RatingResult', function(_, pl)
-	local admin = net.ReadEntity()
+    local admin = net.ReadEntity()
 
-	if !IsValid(admin) then
-		return
-	end
+    if !IsValid(admin) then
+        return
+    end
 
-	local rating = net.ReadInt(5)
+    local rating = net.ReadInt(5)
 
-	admin:SetNWInt('fated_ticket_rating', pl:GetNWInt('fated_ticket_rating', 0) + rating)
+    admin:SetNWInt('fated_ticket_rating', pl:GetNWInt('fated_ticket_rating', 0) + rating)
 
-	FatedNotify(admin, 'Вас оценили на ' .. rating .. '.')
+    FatedNotify(admin, 'Вас оценили на ' .. rating .. '.')
 end)
 
 hook.Add('PlayerInitialSpawn', 'FatedTicket', function(pl)
-	if pl:GetPData('fated_ticket') != nil then
-		pl:SetNWInt('fated_ticket', pl:GetPData('fated_ticket'))
-	end
+    if pl:GetPData('fated_ticket') != nil then
+        pl:SetNWInt('fated_ticket', pl:GetPData('fated_ticket'))
+    end
 
-	if pl:GetPData('fated_ticket_rating') != nil then
-		pl:SetNWInt('fated_ticket_rating', pl:GetPData('fated_ticket_rating'))
-	end
+    if pl:GetPData('fated_ticket_rating') != nil then
+        pl:SetNWInt('fated_ticket_rating', pl:GetPData('fated_ticket_rating'))
+    end
 end)
 
 hook.Add('PlayerDisconnected', 'FatedTicket', function(pl)
-	if FatedTicket.reports[pl] then
-		if IsValid(FatedTicket.reports[pl].admin) then
-			FatedNotify(FatedTicket.reports[pl].admin, 'Жалоба ' .. pl:Name() .. ' отменена - игрок вышел.')
-		end
+    if FatedTicket.reports[pl] then
+        if IsValid(FatedTicket.reports[pl].admin) then
+            FatedNotify(FatedTicket.reports[pl].admin, 'Жалоба ' .. pl:Name() .. ' отменена - игрок вышел.')
+        end
 
-		FatedTicket.reports[pl] = nil
+        FatedTicket.reports[pl] = nil
 
-		FatedUpdateClient()
-	end
+        FatedUpdateClient()
+    end
 
-	if pl:GetNWInt('fated_ticket') != nil then
-		pl:SetPData('fated_ticket', pl:GetNWInt('fated_ticket'))
-	end
+    if pl:GetNWInt('fated_ticket') != nil then
+        pl:SetPData('fated_ticket', pl:GetNWInt('fated_ticket'))
+    end
 
-	if pl:GetNWInt('fated_ticket_rating') != nil then
-		pl:SetPData('fated_ticket_rating', pl:GetNWInt('fated_ticket_rating'))
-	end
+    if pl:GetNWInt('fated_ticket_rating') != nil then
+        pl:SetPData('fated_ticket_rating', pl:GetNWInt('fated_ticket_rating'))
+    end
 end)
 
 hook.Add('PlayerSay', 'FatedTicket', function(pl, text)
-	if text == '/report' then
-		pl:ConCommand('fated_ticket_create')
-		
-		return ''
-	elseif text[1] == '@' then
-		local text_len = string.len(text)
+    if text == '/report' then
+        pl:ConCommand('fated_ticket_create')
+        
+        return ''
+    elseif text[1] == '@' then
+        local text_len = string.len(text)
 
-		if text_len > 1 then
-			pl:ConCommand('fated_ticket_create ' .. string.sub(text, 2, text_len))
-			
-			return ''
-		end
-	end
+        if text_len > 1 then
+            pl:ConCommand('fated_ticket_create ' .. string.sub(text, 2, text_len))
+            
+            return ''
+        end
+    end
 end)
