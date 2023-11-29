@@ -15,7 +15,6 @@ end
 
 local function init()
 	if SERVER then
-        resource.AddWorkshop('2924839375')
         resource.AddFile('materials/fated_ticket/roll_btn.png')
         resource.AddFile('materials/fated_ticket/star.png')
 	end
